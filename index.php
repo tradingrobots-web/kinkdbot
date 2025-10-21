@@ -85,13 +85,7 @@ if ($text == "⬇️ Download Indicator & Script") {
     $indicator_file = __DIR__ . "/Kingdiv V1 2025.ex5";
     $script_file    = __DIR__ . "/KingDiv_Activator_Script 2.ex5";
 
-    // Download from GitHub if missing
-    if (!file_exists($indicator_file)) {
-        github_download_file($owner, $repo2, "Kingdiv V1 2025.ex5", $indicator_file);
-    }
-    if (!file_exists($script_file)) {
-        github_download_file($owner, $repo2, "KingDiv_Activator_Script 2.ex5", $script_file);
-    }
+
 
     // Send both files
     if (file_exists($indicator_file)) {
