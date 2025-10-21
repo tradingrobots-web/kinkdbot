@@ -2,7 +2,7 @@
 // === CONFIG ===
 $botToken  = "8311328395:AAFZn0ljyLwZu1mTOkMJMMgcsppufJ5g_JE";
 $apiURL    = "https://api.telegram.org/bot$botToken/";
-$owner     = "Bestyfx";
+$owner     = "tradingrobots-web";
 $repo2     = "ex5s"; // repo containing EX5 files
 
 // === FUNCTIONS ===
