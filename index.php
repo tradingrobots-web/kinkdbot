@@ -3,7 +3,7 @@
 $botToken  = "8311328395:AAFZn0ljyLwZu1mTOkMJMMgcsppufJ5g_JE";
 $apiURL    = "https://api.telegram.org/bot$botToken/";
 $owner     = "tradingrobots-web";
-$repo2     = "ex5s"; // repo containing EX5 files
+$repo2     = "ex5s"; // repo containin
 
 // === FUNCTIONS ===
 function send_msg($apiURL, $chat_id, $text, $keyboard = null) {
@@ -40,16 +40,27 @@ function send_document($apiURL, $chat_id, $file_path, $caption = "") {
     curl_close($ch);
 }
 
+// ✅ Fixed version for large binary files
 function github_download_file($owner, $repo, $path, $destination) {
-    $url = "https://raw.githubusercontent.com/$owner/$repo/main/" . urlencode($path);
-    $ch = curl_init($url);
-    $fp = fopen($destination, 'w+');
-    curl_setopt($ch, CURLOPT_FILE, $fp);
+    $url = "https://raw.githubusercontent.com/$owner/$repo/main/" . rawurlencode($path);
+
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-    curl_exec($ch);
+    curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0");
+    curl_setopt($ch, CURLOPT_HEADER, false);
+
+    $data = curl_exec($ch);
+    $status = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $contentType = curl_getinfo($ch, CURLINFO_CONTENT_TYPE);
     curl_close($ch);
-    fclose($fp);
-    return file_exists($destination);
+
+    if ($status == 200 && strpos($contentType, 'text/html') === false) {
+        file_put_contents($destination, $data, LOCK_EX);
+        return true;
+    }
+    return false;
 }
 
 // === MAIN ===
@@ -60,7 +71,7 @@ if (!$update) exit;
 $chat_id = $update["message"]["chat"]["id"];
 $text    = trim($update["message"]["text"] ?? "");
 
-// === MAIN MENU KEYBOARD ===
+// === KEYBOARD ===
 $mainKeyboard = [
     "keyboard" => [
         [["text" => "⬇️ Download Indicator & Script"]],
@@ -69,7 +80,7 @@ $mainKeyboard = [
     "resize_keyboard" => true
 ];
 
-// === START / MENU HANDLER ===
+// === START HANDLER ===
 if ($text == "/start" || $text == "⬅️ Back to Menu") {
     send_msg($apiURL, $chat_id,
         "👋 *Welcome to KingDiv Tools!*\n\n"
@@ -81,28 +92,27 @@ if ($text == "/start" || $text == "⬅️ Back to Menu") {
 
 // === DOWNLOAD HANDLER ===
 if ($text == "⬇️ Download Indicator & Script") {
-
     $indicator_file = __DIR__ . "/Kingdiv V1 2025.ex5";
     $script_file    = __DIR__ . "/KingDiv_Activator_Script 2.ex5";
 
+    if (!file_exists($indicator_file)) {
+        github_download_file($owner, $repo2, "Kingdiv V1 2025.ex5", $indicator_file);
+    }
+    if (!file_exists($script_file)) {
+        github_download_file($owner, $repo2, "KingDiv_Activator_Script 2.ex5", $script_file);
+    }
 
-
-    // Send both files
-    if (file_exists($indicator_file)) {
+    if (filesize($indicator_file) < 1000) {
+        send_msg($apiURL, $chat_id, "⚠️ Indicator download failed or incomplete.");
+    } else {
         send_document($apiURL, $chat_id, $indicator_file, "📈 *KingDiv Indicator* — attach it to your chart for real-time signals.");
-    } else {
-        send_msg($apiURL, $chat_id, "⚠️ Indicator file not found.");
     }
 
-    if (file_exists($script_file)) {
+    if (filesize($script_file) < 1000) {
+        send_msg($apiURL, $chat_id, "⚠️ Activator Script download failed or incomplete.");
+    } else {
         send_document($apiURL, $chat_id, $script_file, "⚙️ *KingDiv Activator Script* — run this to activate your license.");
-    } else {
-        send_msg($apiURL, $chat_id, "⚠️ Activator script file not found.");
     }
-
-    // Optional: delete after sending to keep server clean
-    // unlink($indicator_file);
-    // unlink($script_file);
 
     exit;
 }
