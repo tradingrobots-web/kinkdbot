@@ -17,7 +17,7 @@ $headers = [
 ];
 
 // =================== TELEGRAM CONFIG ===================
-$botToken = "8435483851:AAH51xSaZ7IvE94qsKbRjOL-oJI7T8R1ry0";
+$botToken = "8311328395:AAFZn0ljyLwZu1mTOkMJMMgcsppufJ5g_JE";
 $apiURL   = "https://api.telegram.org/bot$botToken/";
 $webhookURL = "https://teletestgrrrrrrrrrrrrrr-1.onrender.com/bot.php";
 
