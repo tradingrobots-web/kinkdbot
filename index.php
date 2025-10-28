@@ -407,16 +407,28 @@ send_msg($apiURL, $chat_id,
 
 
     // === ALIAS INPUT ===
-    if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
-        $alias = trim($text);
+   if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
+    $alias = trim($text);
 
-        foreach ($storage as $uid => $info) {
-            if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
-                send_msg($apiURL, $chat_id,
-                    "⚠️ This Binance Username *$alias* is already linked to another user. Please use your own Binance alias.");
-                exit;
-            }
+    // ✅ Validate Binance Alias format
+    if (!preg_match('/^[A-Za-z0-9._-]{3,20}$/', $alias)) {
+        send_msg($apiURL, $chat_id,
+            "⚠️ *Invalid Binance Alias.*\n\n"
+          . "Your alias should only contain *letters, numbers, dots (.)*, *underscores (_)*, or *hyphens (-)*, and be *3–20 characters long*.\n\n"
+          . "💡 *Example:* `king.div`, `besty_fx`, `Trader-001`, or `Alpha123`.\n\n"
+          . "👉 Please type your correct Binance alias again."
+        );
+        exit;
+    }
+
+    foreach ($storage as $uid => $info) {
+        if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
+            send_msg($apiURL, $chat_id,
+                "⚠️ This Binance Username *$alias* is already linked to another user. Please use your own Binance alias.");
+            exit;
         }
+    }
+
 
         $storage[$user_id]["alias"] = $alias;
         $storage[$user_id]["state"] = "ready_to_pay";
