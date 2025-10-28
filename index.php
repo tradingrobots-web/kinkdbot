@@ -248,11 +248,23 @@ if (isset($update["message"])) {
    
 
 
-    if ($text == "🛒 Buy Product") {
-    $description = "💎 *KingDiv Analysis Indicator* — Upgrade your trading IQ NOW.\n\n"
+   if ($text == "🛒 Buy Product") {
+    // Paths for your local image/GIF files
+    $photo_path1 = __DIR__ . "/donear.gif";
+    $photo_path2 = __DIR__ . "/growthProfit.gif";
+
+    // 1️⃣ — First message: the intro and features
+    $description1 = "💎 *KingDiv Analysis Indicator* — Upgrade your trading IQ NOW.\n\n"
         . "Get instant access to *high-precision market insights* that top traders rely on. Each plan unlocks *full indicator access, real-time updates, and VIP support* — everything you need to read the markets like a pro.\n\n"
-        . "With your subscription, you get the *KingDiv Indicator* + the *Activation Script* — the exact system that spots key trends, support/resistance zones, and signals before the crowd reacts.\n\n"
-        . "🚀 *What You’re Getting:*\n"
+        . "With your subscription, you get the *KingDiv Indicator* + the *Activation Script* — the exact system that spots key trends, support/resistance zones, and signals before the crowd reacts.";
+
+    send_msg($apiURL, $chat_id, $description1);
+
+    // 2️⃣ — Send first GIF (visual reinforcement)
+    send_photo($apiURL, $chat_id, $photo_path1, "🎯 Smart signals in real-time");
+
+    // 3️⃣ — Second block of descriptive text
+    $description2 = "🚀 *What You’re Getting:*\n"
         . "• Smart entry & exit zones 🎯\n"
         . "• Real-time trend bias detection 📈\n"
         . "• Live support & resistance channels 🛠\n"
@@ -260,16 +272,26 @@ if (isset($update["message"])) {
         . "• Activation Key Security 🔐\n"
         . "• Plug-and-play setup — no coding required 🧩\n\n"
         . "🔥 *Why You Can’t Wait:*\n"
-        . "Timing is everything. KingDiv helps you spot *institutional moves* before retail traders react — giving YOU the edge.\n\n"
-        . "💥 *Performance Snapshot (2025):*\n"
+        . "Timing is everything. KingDiv helps you spot *institutional moves* before retail traders react — giving YOU the edge.";
+
+    send_msg($apiURL, $chat_id, $description2);
+
+    // 4️⃣ — Second GIF (growth/profit visual)
+    send_photo($apiURL, $chat_id, $photo_path2, "💰 Growth and profit potential");
+
+    // 5️⃣ — Final info and call-to-action
+    $description3 = "💥 *Performance Snapshot (2025):*\n"
         . "✔️ Average trade accuracy: *82–91%*\n"
         . "✔️ Tested on *200+ instruments* including Gold, BTC, NAS100\n"
         . "✔️ Users earning *$3k–$18k monthly*\n\n"
         . "⚡ *Limited Access:* Each license is unique and linked to your Binance alias — secure yours before the batch fills.\n\n"
-        . "👇 *Tap your desired below and start analyzing like a pro today!*";
-    send_msg($apiURL, $chat_id, $description, $planKeyboard);
+        . "👇 *Tap your desired plan below and start analyzing like a pro today!*";
+
+    send_msg($apiURL, $chat_id, $description3, $planKeyboard);
+
     exit;
 }
+
 
 
     // === PLAN SELECTION ===
