@@ -215,22 +215,39 @@ if (isset($update["message"])) {
         "resize_keyboard" => true
     ];
 
-    // === START ===
-    if ($text == "/start") {
-        send_msg($apiURL, $chat_id,
-            "👋 *Welcome $first!*\n\n"
-          . "💎 *KingDiv Trading Bot* — trade smarter, earn faster.\n\n"
-          . "Your exclusive access to *high-precision trading tools* begins now. Each plan unlocks *full access, updates, and premium support.*\n\n"
-        . "Each plan gives you *full access* to the official *KingDiv Indicator* + the *Activation Script* — the same system powering top-performing private traders globally.\n\n"
-        . "📊 *What You’re Getting:*\n"
+   // === START ===
+if ($text == "/start") {
+
+    // Paths for the entry images
+    $photo_buy  = __DIR__ . "/buyentry.png";
+    $photo_sell = __DIR__ . "/sellentry.jpg";
+
+    // 1️⃣ — Welcome & introduction
+    $msg1 = "👋 *Welcome $first!*\n\n"
+        . "💎 *KingDiv Trading Bot* — trade smarter, earn faster.\n\n"
+        . "Your exclusive access to *high-precision trading tools* begins now. Each plan unlocks *full access, updates, and premium support.*\n\n"
+        . "Each plan gives you *full access* to the official *KingDiv Indicator* + the *Activation Script* — the same system powering top-performing private traders globally.";
+    send_msg($apiURL, $chat_id, $msg1);
+
+    // 2️⃣ — First visual (Buy Entry Example)
+    send_photo($apiURL, $chat_id, $photo_buy, "🟢 Example of a *Buy Entry Zone*");
+
+    // 3️⃣ — Key features
+    $msg2 = "📊 *What You’re Getting:*\n"
         . "• Professional-grade entry & exit precision zones 🎯\n"
         . "• Smart bias detector for trend confirmation 📈\n"
         . "• Real-time algorithmic market mapping ⚙️\n"
-        . "• Real-time Buy/Sell Alerts\n"
-        . "• Auto Support & Resistance Channels\n"
-        . "• Activation Key Security Layer\n"
-        . "• Plug-and-play activation — no coding required 🧩\n\n"
-        . "💎 *Why It Matters:*\n"
+        . "• Real-time Buy/Sell Alerts 🔔\n"
+        . "• Auto Support & Resistance Channels 🛠\n"
+        . "• Activation Key Security Layer 🔐\n"
+        . "• Plug-and-play activation — no coding required 🧩";
+    send_msg($apiURL, $chat_id, $msg2);
+
+    // 4️⃣ — Second visual (Sell Entry Example)
+    send_photo($apiURL, $chat_id, $photo_sell, "🔴 Example of a *Sell Entry Zone*");
+
+    // 5️⃣ — Performance, trust, and CTA
+    $msg3 = "💎 *Why It Matters:*\n"
         . "Because timing is everything. KingDiv helps you spot *institutional footprints* before retail traders even react — giving you a *massive edge* every session.\n\n"
         . "🔥 *Performance Snapshot (2025):*\n"
         . "✔️ Average trade accuracy: *82–91%*\n"
@@ -238,11 +255,13 @@ if (isset($update["message"])) {
         . "✔️ Top users generated *$3,000–$18,000 monthly* in verified accounts.\n\n"
         . "💼 *Steak on the Table:* KingDiv isn’t a toy — it’s a professional tool used by analysts, prop traders, and institutional scalpers who demand precision and results.\n\n"
         . "🕒 *Note:* Each license is unique and linked to your Binance alias for verification. Slots are limited per batch — once filled, access closes temporarily.\n\n"
-        . "📊 *Click on Buy Product below to begin your profitable journey*\n\n",
-          $mainKeyboard
-        );
-        exit;
-    }
+        . "📊 *Click on Buy Product below to begin your profitable journey*";
+
+    send_msg($apiURL, $chat_id, $msg3, $mainKeyboard);
+
+    exit;
+}
+
 
     // === BUY PRODUCT ===
    
