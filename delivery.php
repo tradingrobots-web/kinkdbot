@@ -1,9 +1,9 @@
 <?php
 // --- CONFIGURATION ---
 $botToken = "8068485946:AAE-gDHxm6M4juSYuuzvlrVTwFmn3yXpQ7M";
-$owner = "Bestyfx";
+$owner = "tradingrobots-web";
 $repo2 = "ex5s";
-$token = getenv("GITHUB_TOKEN"); // your real GitHub Personal Access Token
+$token = getenv("SHARE_FILE"); // your real GitHub Personal Access Token
 
 $requiredGroups = [
     "@kingdivforexking",
