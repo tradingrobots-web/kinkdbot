@@ -32,45 +32,30 @@ $chat_id = $update["message"]["chat"]["id"] ?? $update["callback_query"]["messag
 $user_id = $update["message"]["from"]["id"] ?? $update["callback_query"]["from"]["id"];
 $text = strtolower(trim($update["message"]["text"] ?? $update["callback_query"]["data"] ?? ''));
 
-// --- /START COMMAND ---
-if ($text === "/start") {
-    $keyboard = [
-        "inline_keyboard" => [
-            [["text" => "📈 Join KingDiv Forex King", "url" => "https://t.me/kingdivforexking"]],
-            [["text" => "💹 Join KingDiv Scalpers Den", "url" => "https://t.me/KingDivScalpersDen"]],
-            [["text" => "📊 Join KingDiv Chart Masters", "url" => "https://t.me/KingDivChartMasters"]],
-            [["text" => "✅ I’ve Joined All Groups", "callback_data" => "check_join"]]
-        ]
-    ];
-
-    apiRequest("sendMessage", [
-        "chat_id" => $chat_id,
-        "text" => "👋 *Welcome to KingDiv Delivery Bot!*\n\nJoin all 3 official groups below to access your exclusive trading tools 👇",
-        "parse_mode" => "Markdown",
-        "reply_markup" => $keyboard
-    ]);
-    exit;
-}
-
-// --- VALIDATION + FILE DELIVERY ---
-if ($text === "check_join") {
-    global $requiredGroups;
-    $allJoined = true;
-
+// --- AUTO JOIN CHECK FUNCTION ---
+function hasJoinedAllGroups($user_id, $requiredGroups, $botToken) {
     foreach ($requiredGroups as $group) {
         $res = file_get_contents("https://api.telegram.org/bot$botToken/getChatMember?chat_id=$group&user_id=$user_id");
         $info = json_decode($res, true);
         $status = $info["result"]["status"] ?? "left";
         if (!in_array($status, ["member", "administrator", "creator"])) {
-            $allJoined = false;
-            break;
+            return false;
         }
     }
+    return true;
+}
 
-    if ($allJoined) {
+// --- /START COMMAND ---
+if ($text === "/start") {
+
+    $joinedAll = hasJoinedAllGroups($user_id, $requiredGroups, $botToken);
+
+    if ($joinedAll) {
+        // ✅ USER ALREADY IN ALL GROUPS
         apiRequest("sendMessage", [
             "chat_id" => $chat_id,
-            "text" => "🎉 Membership verified successfully!\nPreparing your KingDiv indicators..."
+            "text" => "🎉 *Welcome back, trader!* Your membership is verified.\nDelivering your KingDiv tools...",
+            "parse_mode" => "Markdown"
         ]);
 
         $basePath = __DIR__;
@@ -113,7 +98,7 @@ if ($text === "check_join") {
 
             apiRequest("sendMessage", [
                 "chat_id" => $chat_id,
-                "text" => "✅ *Files successfully delivered!*\n\nTo activate your tools, please proceed to [@Kinkdbot](https://t.me/Kinkdbot).",
+                "text" => "✅ *Files successfully delivered!*\n\nTo activate your indicators, please proceed to [@Kinkdbot](https://t.me/Kinkdbot).",
                 "parse_mode" => "Markdown",
                 "reply_markup" => $activationKeyboard
             ]);
@@ -124,10 +109,20 @@ if ($text === "check_join") {
             ]);
         }
     } else {
+        // ❌ USER HAS NOT JOINED ALL GROUPS
+        $keyboard = [
+            "inline_keyboard" => [
+                [["text" => "📈 Join KingDiv Forex King", "url" => "https://t.me/kingdivforexking"]],
+                [["text" => "💹 Join KingDiv Scalpers Den", "url" => "https://t.me/KingDivScalpersDen"]],
+                [["text" => "📊 Join KingDiv Chart Masters", "url" => "https://t.me/KingDivChartMasters"]],
+            ]
+        ];
+
         apiRequest("sendMessage", [
             "chat_id" => $chat_id,
-            "text" => "❌ You haven’t joined all required groups yet!\n\nPlease join all 3 first, then tap *I’ve Joined All Groups* again.",
-            "parse_mode" => "Markdown"
+            "text" => "🚫 You haven’t joined all the required KingDiv groups yet.\n\nPlease join all 3 below, then send /start again to get your downloads.",
+            "parse_mode" => "Markdown",
+            "reply_markup" => $keyboard
         ]);
     }
 }
