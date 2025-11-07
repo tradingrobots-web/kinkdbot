@@ -1,75 +1,134 @@
 <?php
-// --- Telegram Configuration ---
+// --- TELEGRAM CONFIGURATION ---
 $botToken = "8068485946:AAE-gDHxm6M4juSYuuzvlrVTwFmn3yXpQ7M";
 $apiURL = "https://api.telegram.org/bot$botToken";
 
-// --- Telegram Webhook Handler ---
+$requiredGroups = [
+    "@kingdivforexking",
+    "@KingDivScalpersDen",
+    "@KingDivChartMasters"
+];
+
+// --- HELPER FUNCTION ---
+function apiRequest($method, $data = []) {
+    global $botToken;
+    $url = "https://api.telegram.org/bot$botToken/$method";
+    $options = [
+        'http' => [
+            'header' => "Content-Type: application/json",
+            'method' => 'POST',
+            'content' => json_encode($data)
+        ]
+    ];
+    return json_decode(file_get_contents($url, false, stream_context_create($options)), true);
+}
+
+// --- MAIN WEBHOOK HANDLER ---
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
-
 if (!$update) exit;
 
 $chat_id = $update["message"]["chat"]["id"] ?? $update["callback_query"]["message"]["chat"]["id"];
+$user_id = $update["message"]["from"]["id"] ?? $update["callback_query"]["from"]["id"];
 $text = strtolower(trim($update["message"]["text"] ?? $update["callback_query"]["data"] ?? ''));
 
-// --- Start Command ---
+// --- /START COMMAND ---
 if ($text === "/start") {
     $keyboard = [
         "inline_keyboard" => [
-            [
-                ["text" => "📦 Download KingDiv Files", "callback_data" => "deliver_files"]
-            ]
+            [["text" => "📈 Join KingDiv Forex King", "url" => "https://t.me/kingdivforexking"]],
+            [["text" => "💹 Join KingDiv Scalpers Den", "url" => "https://t.me/KingDivScalpersDen"]],
+            [["text" => "📊 Join KingDiv Chart Masters", "url" => "https://t.me/KingDivChartMasters"]],
+            [["text" => "✅ I’ve Joined All Groups", "callback_data" => "check_join"]]
         ]
     ];
 
-    $reply = [
-        'chat_id' => $chat_id,
-        'text' => "👋 Karibu!\n\nBonyeza button hapa chini kudownload files zako za KingDiv.",
-        'reply_markup' => json_encode($keyboard)
-    ];
-
-    file_get_contents("$apiURL/sendMessage?" . http_build_query($reply));
+    apiRequest("sendMessage", [
+        "chat_id" => $chat_id,
+        "text" => "👋 *Welcome to KingDiv Delivery Bot!*\n\nJoin all 3 official groups below to access your exclusive trading tools 👇",
+        "parse_mode" => "Markdown",
+        "reply_markup" => $keyboard
+    ]);
     exit;
 }
 
-// --- Deliver Local Files ---
-if ($text === "deliver_files") {
-    $basePath = __DIR__; // folder ya sasa
-    $file1 = "$basePath/Kingdiv V1 2025.ex5";
-    $file2 = "$basePath/KingDiv_Activator_Script 2.ex5";
+// --- VALIDATION + FILE DELIVERY ---
+if ($text === "check_join") {
+    global $requiredGroups;
+    $allJoined = true;
 
-    // Check kama files zipo
-    if (file_exists($file1) && file_exists($file2)) {
-        // Tuma file 1
-        $post1 = [
-            'chat_id' => $chat_id,
-            'document' => new CURLFile($file1),
-            'caption' => "✅ Kingdiv V1 2025.ex5 imewasilishwa kikamilifu!"
-        ];
-        $ch = curl_init("$apiURL/sendDocument");
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $post1);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch);
-        curl_close($ch);
+    foreach ($requiredGroups as $group) {
+        $res = file_get_contents("https://api.telegram.org/bot$botToken/getChatMember?chat_id=$group&user_id=$user_id");
+        $info = json_decode($res, true);
+        $status = $info["result"]["status"] ?? "left";
+        if (!in_array($status, ["member", "administrator", "creator"])) {
+            $allJoined = false;
+            break;
+        }
+    }
 
-        // Tuma file 2
-        $post2 = [
-            'chat_id' => $chat_id,
-            'document' => new CURLFile($file2),
-            'caption' => "✅ KingDiv_Activator_Script 2.ex5 imewasilishwa kikamilifu!"
-        ];
-        $ch2 = curl_init("$apiURL/sendDocument");
-        curl_setopt($ch2, CURLOPT_POST, true);
-        curl_setopt($ch2, CURLOPT_POSTFIELDS, $post2);
-        curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-        curl_exec($ch2);
-        curl_close($ch2);
+    if ($allJoined) {
+        apiRequest("sendMessage", [
+            "chat_id" => $chat_id,
+            "text" => "🎉 Membership verified successfully!\nPreparing your KingDiv indicators..."
+        ]);
+
+        $basePath = __DIR__;
+        $file1 = "$basePath/Kingdiv V1 2025.ex5";
+        $file2 = "$basePath/KingDiv_Activator_Script 2.ex5";
+
+        if (file_exists($file1) && file_exists($file2)) {
+            // Send first file
+            $ch1 = curl_init("$apiURL/sendDocument");
+            curl_setopt($ch1, CURLOPT_POST, true);
+            curl_setopt($ch1, CURLOPT_POSTFIELDS, [
+                'chat_id' => $chat_id,
+                'document' => new CURLFile($file1),
+                'caption' => "📦 *KingDiv V1 2025.ex5* delivered successfully!",
+                'parse_mode' => 'Markdown'
+            ]);
+            curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($ch1);
+            curl_close($ch1);
+
+            // Send second file
+            $ch2 = curl_init("$apiURL/sendDocument");
+            curl_setopt($ch2, CURLOPT_POST, true);
+            curl_setopt($ch2, CURLOPT_POSTFIELDS, [
+                'chat_id' => $chat_id,
+                'document' => new CURLFile($file2),
+                'caption' => "📦 *KingDiv_Activator_Script 2.ex5* delivered successfully!",
+                'parse_mode' => 'Markdown'
+            ]);
+            curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+            curl_exec($ch2);
+            curl_close($ch2);
+
+            // After both files, send activation directions
+            $activationKeyboard = [
+                "inline_keyboard" => [
+                    [["text" => "⚙️ Get Activation Details", "url" => "https://t.me/Kinkdbot"]]
+                ]
+            ];
+
+            apiRequest("sendMessage", [
+                "chat_id" => $chat_id,
+                "text" => "✅ *Files successfully delivered!*\n\nTo activate your tools, please proceed to [@Kinkdbot](https://t.me/Kinkdbot).",
+                "parse_mode" => "Markdown",
+                "reply_markup" => $activationKeyboard
+            ]);
+        } else {
+            apiRequest("sendMessage", [
+                "chat_id" => $chat_id,
+                "text" => "⚠️ Files not found on the server. Please contact support for assistance."
+            ]);
+        }
     } else {
-        file_get_contents("$apiURL/sendMessage?" . http_build_query([
-            'chat_id' => $chat_id,
-            'text' => "⚠️ File(s) hazionekani kwenye server. Hakikisha ziko kwenye folder sawa na delivery.php"
-        ]));
+        apiRequest("sendMessage", [
+            "chat_id" => $chat_id,
+            "text" => "❌ You haven’t joined all required groups yet!\n\nPlease join all 3 first, then tap *I’ve Joined All Groups* again.",
+            "parse_mode" => "Markdown"
+        ]);
     }
 }
 ?>
