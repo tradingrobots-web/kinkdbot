@@ -23,6 +23,32 @@ function apiRequest($method, $data = []) {
     return json_decode(file_get_contents($url, false, stream_context_create($options)), true);
 }
 
+// --- PROMOTIONAL MESSAGES ---
+$promoMessages = [
+    "👑 *KingDiv Price Action System* — engineered for traders who demand precision.  
+Each plotted level is a reflection of real price memory, and the *arrow buffers* reveal momentum shifts. 🔥",
+
+    "📈 *The KingDiv Indicator* doesn’t guess — it calculates.  
+Reaction zones and *arrow buffers* expose hidden institutional flow. 💎",
+
+    "🎯 Forget noise. Forget delay. KingDiv reads history and projects forward with precision. 🚀",
+
+    "💹 *Smart money doesn’t chase candles — it anticipates reactions.*  
+Plotted lines show where price *will* respect; arrows confirm *when* to act. ⚡",
+
+    "🔥 *Price reacts — KingDiv predicts.*  
+Draws high-confidence reaction lines and directional arrows. 📊",
+
+    "🧠 KingDiv studies market behavior to identify future reaction zones.  
+Plotted arrows mark *smart entries*, horizontal buffers double as take-profit zones. 💰",
+
+    "💼 *Built for traders who treat trading like a business.*  
+Arrow buffers provide confirmation signals integrating with price action. 👁️",
+
+    "🚀 *Precision isn’t optional — it’s essential.*  
+Every arrow and line is statistically weighted from past market reactions. 💎"
+];
+
 // --- MAIN WEBHOOK HANDLER ---
 $content = file_get_contents("php://input");
 $update = json_decode($content, true);
@@ -89,7 +115,7 @@ if ($text === "/start") {
             curl_exec($ch2);
             curl_close($ch2);
 
-            // After both files, send activation directions
+            // After files, send activation directions
             $activationKeyboard = [
                 "inline_keyboard" => [
                     [["text" => "⚙️ Get Activation Details", "url" => "https://t.me/Kinkdbot"]]
@@ -102,6 +128,25 @@ if ($text === "/start") {
                 "parse_mode" => "Markdown",
                 "reply_markup" => $activationKeyboard
             ]);
+
+            // --- POST TO CHANNELS ---
+            $channels = [
+                "@kingdivforexking",
+                "@KingDivScalpersDen",
+                "@KingDivChartMasters"
+            ];
+
+            $promo = $promoMessages[array_rand($promoMessages)] . "\n\n👉 Download and activate your indicators via @PFTDeliverybot";
+
+            foreach ($channels as $channel) {
+                apiRequest("sendMessage", [
+                    "chat_id" => $channel,
+                    "text" => $promo,
+                    "parse_mode" => "Markdown"
+                ]);
+                sleep(3); // small delay between channels
+            }
+
         } else {
             apiRequest("sendMessage", [
                 "chat_id" => $chat_id,
