@@ -1,4 +1,36 @@
 <?php
+// -----------------------------
+// Handle Telegram Webhook Input
+// -----------------------------
+$update = json_decode(file_get_contents("php://input"), true);
+if (!$update) exit;
+
+$chatId  = $update["message"]["chat"]["id"] ?? $update["callback_query"]["message"]["chat"]["id"] ?? null;
+$message = $update["message"]["text"] ?? $update["callback_query"]["data"] ?? "";
+
+// --------------------------------
+// Restrict bot to @jikimu only
+// --------------------------------
+$mainChannelUsername = "@jikimu"; // your main channel username
+
+// Get username of the chat where the message came from
+$chatUsername = $update["message"]["chat"]["username"] 
+             ?? $update["callback_query"]["message"]["chat"]["username"] 
+             ?? "";
+
+// If not from @jikimu, ignore
+if (strcasecmp($chatUsername, ltrim($mainChannelUsername, "@")) !== 0) {
+    // Optionally, send polite notice only if it's a private chat
+    if (($update["message"]["chat"]["type"] ?? '') == "private") {
+        $apiURL = "https://api.telegram.org/bot8068485946:AAE-gDHxm6M4juSYuuzvlrVTwFmn3yXpQ7M/";
+        file_get_contents($apiURL . "sendMessage?" . http_build_query([
+            "chat_id" => $chatId,
+            "text" => "⚠️ This bot only works inside our main channel: $mainChannelUsername"
+        ]));
+    }
+    exit;
+}
+
 // -------------------------------
 // Telegram + GitHub Configuration
 // -------------------------------
@@ -33,15 +65,6 @@ function github_download_filex($owner, $repo2, $path, $destination, $token) {
     }
     return false;
 }
-
-// -----------------------------
-// Handle Telegram Webhook Input
-// -----------------------------
-$update = json_decode(file_get_contents("php://input"), true);
-if (!$update) exit;
-
-$chatId  = $update["message"]["chat"]["id"] ?? $update["callback_query"]["message"]["chat"]["id"] ?? null;
-$message = $update["message"]["text"] ?? $update["callback_query"]["data"] ?? "";
 
 // --------------------------------
 // Step 1: /start → Ask to join all
