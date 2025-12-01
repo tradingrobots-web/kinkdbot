@@ -405,9 +405,9 @@ send_msg($apiURL, $chat_id,
     }
 }
 
+// === ALIAS INPUT ===
+if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
 
-    // === ALIAS INPUT ===
-   if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
     $alias = trim($text);
 
     // ✅ Validate Binance Alias format
@@ -415,55 +415,71 @@ send_msg($apiURL, $chat_id,
         send_msg($apiURL, $chat_id,
             "⚠️ *Invalid Binance Alias.*\n\n"
           . "Your alias should only contain *letters, numbers, dots (.)*, *underscores (_)*, or *hyphens (-)*, and be *3–20 characters long*.\n\n"
-          . "💡 *Example:* `king.div`, `besty_fx`, `Trader-001`, or `Alpha123`.\n\n"
-          . "👉 Please type your correct Binance alias again."
+          . "💡 *Examples:* `king.div`, `besty_fx`, `Trader-001`, `Alpha123`\n\n"
+          . "👉 Please enter your correct Binance alias again."
         );
         exit;
     }
 
+    // ❌ Prevent alias duplication by other users
     foreach ($storage as $uid => $info) {
         if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
             send_msg($apiURL, $chat_id,
-                "⚠️ This Binance Username *$alias* is already linked to another user. Please use your own Binance alias.");
+                "⚠️ This Binance Username *$alias* is already linked to another user.\n"
+              . "Please use your own alias.");
             exit;
         }
     }
 
+    // ✅ Save alias correctly
+    $storage[$user_id]["alias"] = $alias;
+    $storage[$user_id]["state"] = "ready_to_pay";
 
-        $storage[$user_id]["alias"] = $alias;
-        $storage[$user_id]["state"] = "ready_to_pay";
-        $storage[$user_id]["products"] = $storage[$user_id]["products"] ?? [];
-        github_save($owner, $repo, $userDataPath, $storage, $sha_user, $headers);
-
-        $amount = $storage[$user_id]["amount"];
-        $balance = find_balance_by_alias($revenues, $alias);
-
-        $reply = "💎 Binance Username: *$alias*\n💰 Balance: *$balance USDT*";
-
-        if ($balance >= $amount) {
-    $reply .= "\n\n✅ *Awesome!* You have enough balance to activate your  plan.\n"
-            . "⚡ This is your moment — tap below to confirm and activate your access to the *KingDiv Analysis Indicator*.\n"
-            . "🔥 Don’t hesitate — every second you wait, you’re missing high-precision trade setups!";
-    
-    $keyboard = [
-        "keyboard" => [
-            [["text" => "💸 Confirm Now and Activate with {$amount} USDT"]],
-            [["text" => "⬅️ Back to Menu"]],
-        ],
-        "resize_keyboard" => true
-    ];
-} else {
-    $reply .= "\n\n⚠️ *Insufficient balance for the the plan selected.*\n"
-            . "💡 Don’t let this opportunity pass — KingDiv is built to work *for you*, not wait on you.\n"
-            . "💰 Top up now and turn your analysis power back ON!";
-    
-    $keyboard = $mainKeyboard;
-}
-
-
-        send_msg($apiURL, $chat_id, $reply, $keyboard);
-        exit;
+    // Default products array if not set
+    if (!isset($storage[$user_id]["products"])) {
+        $storage[$user_id]["products"] = [];
     }
+
+    // Save updated storage
+    github_save($owner, $repo, $userDataPath, $storage, $sha_user, $headers);
+
+    // Retrieve selected plan amount
+    $amount = $storage[$user_id]["amount"];
+
+    // 🔍 Check balance for this alias from revenues.json
+    $balance = find_balance_by_alias($revenues, $alias);
+
+    // Start reply message
+    $reply = "💎 Binance Username: *$alias*\n💰 Balance: *$balance USDT*";
+
+    // === BALANCE ENOUGH ===
+    if ($balance >= $amount) {
+
+        $reply .= "\n\n✅ *Awesome!* You have enough balance to activate your plan.*\n"
+            . "⚡ Tap below to confirm and activate your access to the *KingDiv Analysis Indicator*.";
+
+        $keyboard = [
+            "keyboard" => [
+                [["text" => "💸 Confirm Now and Activate with {$amount} USDT"]],
+                [["text" => "⬅️ Back to Menu"]],
+            ],
+            "resize_keyboard" => true
+        ];
+
+    } 
+    // === BALANCE NOT ENOUGH ===
+    else {
+
+        $reply .= "\n\n⚠️ *Insufficient balance for the selected plan.*\n"
+            . "💡 Top up and try again to activate your access.";
+
+        $keyboard = $mainKeyboard;
+    }
+
+    // Send response
+    send_msg($apiURL, $chat_id, $reply, $keyboard);
+    exit;
+}
 
     // === CONFIRM PAYMENT ===
   if (preg_match("/💸\s*Confirm\s*Now\s*and\s*Activate\s*with\s*(\d+(?:\.\d+)?)\s*USDT/i", $text, $m)) {
