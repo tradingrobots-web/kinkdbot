@@ -399,10 +399,7 @@ send_msg($apiURL, $chat_id,
   . "🚀 *KingDiv × Binance Pay = Instant. Secure. Global.*",
   $removeKeyboard
 );
-
-         
-        exit;
-    }
+   }
 }
 
 
