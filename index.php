@@ -415,14 +415,14 @@ send_msg($apiURL, $chat_id,
           . "💡 *Example:* `king.div`, `besty_fx`, `Trader-001`, or `Alpha123`.\n\n"
           . "👉 Please type your correct Binance alias again."
         );
-        exit;
+       
     }
 
     foreach ($storage as $uid => $info) {
         if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
             send_msg($apiURL, $chat_id,
                 "⚠️ This Binance Username *$alias* is already linked to another user. Please use your own Binance alias.");
-            exit;
+            
         }
     }
 
