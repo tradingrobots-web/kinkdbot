@@ -408,45 +408,63 @@ if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "await
     
     $alias = trim($text);
 
-    // Validate alias format
+    // Step 1 - Validate alias format
     if (!preg_match('/^[A-Za-z0-9._-]{3,20}$/', $alias)) {
         send_msg($apiURL, $chat_id,
             "⚠️ *Invalid Binance Alias.*\n\n"
-          . "Your alias should only contain *letters, numbers, dots (.)*, *underscores (_)*, or *hyphens (-)*, and be *3–20 characters long*.\n\n"
-          . "💡 Examples:\n"
-          . "`king.div`, `besty_fx`, `Trader-001`, `Alpha123`\n\n"
-          . "👉 Please type your correct Binance Alias again."
+          . "Alias must be 3–20 characters and only contain:\n"
+          . "• letters\n• numbers\n• dots (.)\n• underscores (_)\n• hyphens (-)\n\n"
+          . "Try again."
         );
-        return; // ⚠️ NOT exit — return to avoid killing next handler
+        return;
     }
 
-    // Check duplicates within storage
+    // Step 2 - Check if alias is already used by another user
     foreach ($storage as $uid => $info) {
         if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
             send_msg($apiURL, $chat_id,
-                "⚠️ The alias *$alias* is already linked to another user.\n\n"
-              . "Please use your own Binance Username."
+                "⚠️ This alias *$alias* is already linked to another user.\n"
+              . "Use your own Binance Username."
             );
-            return; // ⚠️ return, not exit
+            return;
         }
     }
 
-    // Save alias
+    // Step 3 - CHECK IF ALIAS EXISTS IN PAYMENT HISTORY
+    $balance = find_balance_by_alias($revenues, $alias);
+
+    if ($balance === null || $balance === 0) {
+        // ❌ Alias never sent crypto OR not found in payments list
+        send_msg($apiURL, $chat_id,
+            "⚠️ *No payments found for alias:* `$alias`\n\n"
+          . "❗ This alias has not paid anything yet.\n"
+          . "Please:\n"
+          . "1️⃣ Confirm you typed the correct alias\n"
+          . "2️⃣ Make sure you used *Binance Pay* to send your USDT\n"
+          . "3️⃣ Try again\n\n"
+          . "🔁 Type your correct Binance Alias:"
+        );
+        return;
+    }
+
+    // Step 4 - Save alias since it is found in payment records
     $storage[$user_id]["alias"] = $alias;
     $storage[$user_id]["state"] = "ready_to_pay";
     $storage[$user_id]["products"] = $storage[$user_id]["products"] ?? [];
 
     github_save($owner, $repo, $userDataPath, $storage, $sha_user, $headers);
 
-    // Check balance from revenue JSON
-    $amount  = $storage[$user_id]["amount"];
-    $balance = find_balance_by_alias($revenues, $alias);
+    // Step 5 - Check if balance covers chosen plan
+    $amount = $storage[$user_id]["amount"];
 
-    $reply = "💎 Binance Username: *$alias*\n💰 Balance: *$balance USDT*\n\n";
+    $reply = "💎 Binance Username: *$alias*\n"
+           . "💰 Total Paid: *$balance USDT*\n\n";
 
     if ($balance >= $amount) {
-        $reply .= "✅ *Perfect!* Your balance is enough to activate your plan.\n"
-                . "Tap below to confirm activation.";
+        $reply .= "✅ Payment found!\n"
+                . "You have enough balance to activate.\n"
+                . "Click below to confirm activation.";
+
         $keyboard = [
             "keyboard" => [
                 [["text" => "💸 Confirm Now and Activate with {$amount} USDT"]],
@@ -455,15 +473,17 @@ if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "await
             "resize_keyboard" => true
         ];
     } else {
-        $reply .= "⚠️ *Insufficient balance.*\n"
-                . "Please top up your Binance Pay before activating.";
+        $reply .= "⚠️ Your payment exists but is *not enough*.\n"
+                . "Please top up your Binance Pay account.";
+
         $keyboard = $mainKeyboard;
     }
 
     send_msg($apiURL, $chat_id, $reply, $keyboard);
 
-    return; // ⚠️ Only 1 exit/return here
+    return;
 }
+
 
 
     // === CONFIRM PAYMENT ===
