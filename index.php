@@ -404,63 +404,67 @@ send_msg($apiURL, $chat_id,
 
 
     // === ALIAS INPUT ===
-   if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
+if (isset($storage[$user_id]["state"]) && $storage[$user_id]["state"] === "awaiting_alias") {
+    
     $alias = trim($text);
 
-    // ✅ Validate Binance Alias format
+    // Validate alias format
     if (!preg_match('/^[A-Za-z0-9._-]{3,20}$/', $alias)) {
         send_msg($apiURL, $chat_id,
             "⚠️ *Invalid Binance Alias.*\n\n"
           . "Your alias should only contain *letters, numbers, dots (.)*, *underscores (_)*, or *hyphens (-)*, and be *3–20 characters long*.\n\n"
-          . "💡 *Example:* `king.div`, `besty_fx`, `Trader-001`, or `Alpha123`.\n\n"
-          . "👉 Please type your correct Binance alias again."
+          . "💡 Examples:\n"
+          . "`king.div`, `besty_fx`, `Trader-001`, `Alpha123`\n\n"
+          . "👉 Please type your correct Binance Alias again."
         );
-       
+        return; // ⚠️ NOT exit — return to avoid killing next handler
     }
 
+    // Check duplicates within storage
     foreach ($storage as $uid => $info) {
         if ($uid != $user_id && isset($info["alias"]) && strcasecmp($info["alias"], $alias) == 0) {
             send_msg($apiURL, $chat_id,
-                "⚠️ This Binance Username *$alias* is already linked to another user. Please use your own Binance alias.");
-            
+                "⚠️ The alias *$alias* is already linked to another user.\n\n"
+              . "Please use your own Binance Username."
+            );
+            return; // ⚠️ return, not exit
         }
     }
 
+    // Save alias
+    $storage[$user_id]["alias"] = $alias;
+    $storage[$user_id]["state"] = "ready_to_pay";
+    $storage[$user_id]["products"] = $storage[$user_id]["products"] ?? [];
 
-        $storage[$user_id]["alias"] = $alias;
-        $storage[$user_id]["state"] = "ready_to_pay";
-        $storage[$user_id]["products"] = $storage[$user_id]["products"] ?? [];
-        github_save($owner, $repo, $userDataPath, $storage, $sha_user, $headers);
+    github_save($owner, $repo, $userDataPath, $storage, $sha_user, $headers);
 
-        $amount = $storage[$user_id]["amount"];
-        $balance = find_balance_by_alias($revenues, $alias);
+    // Check balance from revenue JSON
+    $amount  = $storage[$user_id]["amount"];
+    $balance = find_balance_by_alias($revenues, $alias);
 
-        $reply = "💎 Binance Username: *$alias*\n💰 Balance: *$balance USDT*";
+    $reply = "💎 Binance Username: *$alias*\n💰 Balance: *$balance USDT*\n\n";
 
-        if ($balance >= $amount) {
-    $reply .= "\n\n✅ *Awesome!* You have enough balance to activate your  plan.\n"
-            . "⚡ This is your moment — tap below to confirm and activate your access to the *KingDiv Analysis Indicator*.\n"
-            . "🔥 Don’t hesitate — every second you wait, you’re missing high-precision trade setups!";
-    
-    $keyboard = [
-        "keyboard" => [
-            [["text" => "💸 Confirm Now and Activate with {$amount} USDT"]],
-            [["text" => "⬅️ Back to Menu"]],
-        ],
-        "resize_keyboard" => true
-    ];
-} else {
-    $reply .= "\n\n⚠️ *Insufficient balance for the the plan selected.*\n"
-            . "💡 Don’t let this opportunity pass — KingDiv is built to work *for you*, not wait on you.\n"
-            . "💰 Top up now and turn your analysis power back ON!";
-    
-    $keyboard = $mainKeyboard;
+    if ($balance >= $amount) {
+        $reply .= "✅ *Perfect!* Your balance is enough to activate your plan.\n"
+                . "Tap below to confirm activation.";
+        $keyboard = [
+            "keyboard" => [
+                [["text" => "💸 Confirm Now and Activate with {$amount} USDT"]],
+                [["text" => "⬅️ Back to Menu"]],
+            ],
+            "resize_keyboard" => true
+        ];
+    } else {
+        $reply .= "⚠️ *Insufficient balance.*\n"
+                . "Please top up your Binance Pay before activating.";
+        $keyboard = $mainKeyboard;
+    }
+
+    send_msg($apiURL, $chat_id, $reply, $keyboard);
+
+    return; // ⚠️ Only 1 exit/return here
 }
 
-
-        send_msg($apiURL, $chat_id, $reply, $keyboard);
-        exit;
-    }
 
     // === CONFIRM PAYMENT ===
   if (preg_match("/💸\s*Confirm\s*Now\s*and\s*Activate\s*with\s*(\d+(?:\.\d+)?)\s*USDT/i", $text, $m)) {
